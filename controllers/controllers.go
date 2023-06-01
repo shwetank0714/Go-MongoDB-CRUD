@@ -15,7 +15,7 @@ import (
 	"go.mongodb.org/mongo-driver/mongo/options"
 )
 
-const connectionString = "mongodb+srv://dshwetank1:<gakuccespif0>@cluster0.gwklm34.mongodb.net/?retryWrites=true&w=majority"
+const connectionString = "mongodb+srv://dshwetank1:gakuccespif0@cluster0.gwklm34.mongodb.net/?retryWrites=true&w=majority"
 const dbName = "netflix"
 const collectionName = "watchlist"
 
@@ -47,15 +47,20 @@ func init() {
 // Mongo DB Helpers - file
 
 // Insert a record ( Add a data in Mongo)
-func insertMovie(movie model.Netflix) {
+func insertMovie(movie *model.Netflix) error{
 	insertedResult, err := collection.InsertOne(context.Background(), movie)
 
 	if err != nil {
 		log.Fatal(err)
+		return err
 	}
 
-	fmt.Println("INSERTED RESULT DATA", insertedResult)
-	fmt.Println("Movie inserted succesfully in DB, ID: ", insertedResult.InsertedID)
+	movie.ID = primitive.NewObjectID()
+
+	log.Println("INSERTED RESULT DATA", insertedResult)
+	log.Println("Movie inserted succesfully in DB, ID: ", insertedResult.InsertedID)
+
+	return nil
 }
 
 // Update the record in DB
@@ -68,7 +73,7 @@ func updateMovie(movieId string) {
 	}
 
 	filter := bson.M{"_id": id}
-	update := bson.M{"$set": bson.M{"watched": true}}
+	update := bson.M{"$set": bson.M{"is_watched": true}}
 	// gives the result - how many records are updated
 	result, err := collection.UpdateOne(context.Background(), filter, update)
 	if err != nil {
@@ -146,7 +151,9 @@ func CreateMovie(w http.ResponseWriter, r *http.Request){
 		log.Fatal(err)
 	}
 
-	insertMovie(movie)
+	if err := insertMovie(&movie); err != nil {
+		log.Fatal(err)
+	}
 	json.NewEncoder(w).Encode(movie)
 }
 
